@@ -63,4 +63,13 @@
    * (2) Max Idle Time (? ms): 사용이 끝난 소켓이 풀에서 재사용을 기다리며 생존할 수 있는 시간.
    * (3) Acquire Timeout (? ms): 풀이 가득 찼을 때, 다른 요청이 끝나서 소켓을 넘겨받기 위해 기다리는 시간.
 
-``
+```
+
+| 구분                            | HTTP/1.1                   | HTTP/2                                |
+| ----------------------------- | -------------------------- | ------------------------------------- |
+| 기본 구조                         | 보통 connection 하나에서 순차 처리   | connection 하나에 여러 stream multiplexing |
+| 요청 timeout 영향 범위              | 요청과 connection이 강하게 묶임     | 요청(stream)과 connection 분리             |
+| keep-alive 의미                 | 다음 요청 재사용 위해 connection 유지 | 여러 stream을 싣는 connection 자체 유지        |
+| stream 개념                     | 없음                         | 있음                                    |
+| 요청별 timeout 발생 시              | 경우에 따라 connection 영향 큼     | 보통 해당 stream만 종료                      |
+| connection-level timeout 발생 시 | connection 종료              | connection 종료 + 모든 active stream 영향   |
