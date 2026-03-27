@@ -9,7 +9,7 @@
   - graceful shutdown (server)
     - 새로운 connection accept를 중단
     - 기존 connection 또는 진행 중인 요청이 종료될 시간을 준 뒤 application 종료
-    - 필요 시 shutdown timeout 이후 남은 connection을 강제 종료할 수 있음    
+    - 필요 시 shutdown timeout 이후 남은 connection을 강제 종료할 수 있음
   - keep-alive timeout (client/server)
     - 일정 시간마다 probe
     - probe 실패한 시간이 timer를 넘어가면 keep-alive timeout 발생
