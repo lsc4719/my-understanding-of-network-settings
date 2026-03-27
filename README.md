@@ -1,93 +1,31 @@
-```
-  1. [TCP Layer] 연결 수립 및 유지 (L4 - Transport)
-  핵심: 데이터가 지나갈 물리적인 통로(Pipe)의 상태를 관리합니다.
+- TCP
+  - connection timeout (client)
+    - TCP 3-way handshake에서 client가 SYN을 보낸 뒤 연결 완료를 기다림
+    - 일정 시간 내에 SYN-ACK를 받지 못하면 connection timeout 발생
 
-    1    [Client]                                               [Server]
-    2        |                                                     |
-    3        |  (1) [Connect Timeout] 감시 시작                      |
-    4        |  ------- SYN (연결 요청) ---------------------------> |
-    5        |  <------ SYN-ACK (연결 수락) ------------------------ | (2) Listen (Port)
-    6        |  ------- ACK (최종 확인) ---------------------------> |
-    7        |       [ TCP Connection Established ]                |
-    8        |                                                     |
-    9        |  <======== (3) 데이터 패킷 (Segment) 교환 ========>    |
-   10        |                                                     |
-   11        |  (4) [Read / Write / Idle Timeout] 감시               | (4) [Idle Timeout] 감시
-   12        |      (데이터 흐름의 정체나 중단을 감시)                  |
-   13        |                                                     |
-   14        |  ------- FIN (종료 요청) ---------------------------> | (5) [Graceful Shutdown]
-   15        |  <------ ACK / FIN / ACK (종료 절차) --------------- |
-   16        |         [ TCP Connection Closed ]                   |
-   * (1) Connect Timeout (? ms): 전화를 걸고 상대방이 응답(SYN-ACK)할 때까지의 대기 시간.
-   * (3) Read / Write Timeout (? ms): 데이터 패킷 조각(Segment)을 하나 보낼 때 혹은 받을 때 허용되는 최대 시간.
-   * (4) Idle Timeout (? ms): 양방향 모두 데이터 교환(Read/Write)이 전혀 없을 때 연결을 정리하는 시간.
+  - read/write timeout (client/server)
+    - 연결 수립 후 socket read/write가 일정 시간 동안 진행되지 않으면 timeout 발생
 
-  ---
+  - idle timeout (client/server/proxy)
+    - 연결이 열린 상태에서 일정 시간 동안 송수신이 없으면 연결을 종료하는 timeout
 
-  2. [HTTP Layer] 요청 및 응답 (L7 - Application)
-  핵심: 비즈니스적인 "주문-서빙" 트랜잭션이 완료되는지를 관리합니다.
+  - graceful shutdown (server)
+    - 새로운 connection accept를 중단
+    - 기존 connection 또는 진행 중인 요청이 종료될 시간을 준 뒤 application 종료
+    - 필요 시 shutdown timeout 이후 남은 connection을 강제 종료할 수 있음
+  - graceful shutdown (server)
+    - tcp connection이 모두 종료되기 전까지 application 종료 대기
+    - listen 중단
+  - keep-alive timeout (client/server)
+    - 일정 시간마다 probe
+    - probe 실패한 시간이 timer를 넘어가면 keep-alive timeout 발생
 
-    1      [Client]                                             [Server]
-    2        |                                                     |
-    3        |  ======= HTTP Request (주문서 전송) =======>          |
-    4        |  (Request LTTB: 전송 완료 시점)                       |
-    5        |                                                     |
-    6        |  (1) [Response Timeout] 감시 시작                     | (2) [Server Processing]
-    7        |      (백엔드가 요리/처리를 시작함...)                 | (DB 조회, 로직 수행 등)
-    8        |                                                     |
-    9        |  <------ HTTP Response Header (TTFB) -------------- | (3) [Response 시작]
-   10        |  (1) [Response Timeout] 타이머 중단                    |
-   11        |                                                     |
-   12        |  <------ HTTP Response Body (LTTB) ---------------- | (4) [Response 완료]
-   * (1) Response Timeout (? ms): 주문을 마친 시점(LTTB)부터 첫 번째 응답 조각(TTFB)이 올 때까지의 총 인내 시간.
-   * (2) Server Processing: 실제 서버 내부에서 코드가 실행되며 시간이 소요되는 구간 (장애의 주요 원인).
-
-  ---
-
-  3. [TCP Connection Pool] 자원 관리 (Client-side Internal)
-  핵심: 성능을 위해 미리 뚫어놓은 파이프라인(TCP)을 재사용하는 효율성을 관리합니다.
-
-    1     [Client]                                              [Server]
-    2        |                                                     |
-    3        |   [ TCP Connection Pool (Fixed Size) ]              |
-    4        |  +---------------------------------------+          |
-    5 Req A  |  | [Socket 1: Busy (사용 중)]             | -------> | (1) [Max Connections (?)]
-    6 Req B  |  | [Socket 2: Busy (사용 중)]             | -------> | (동시 통화 가능 개수 제한)
-    7        |  | [Socket 3: Idle (Pool 보관 중)]        |          |
-    8        |  | [Socket 4: Idle (Pool 보관 중)]        |          | (2) [Max Idle Time (? ms)]
-    9        |  +---------------------------------------+          | (미사용 소켓 자동 폐기)
-   10        |                                                     |
-   11 Req C  |  (3) [Acquire Timeout] 감시 시작                      |
-   12        |      (빈 소켓이 생길 때까지 대기...)                  |
-   * (1) Max Connections (?): 백엔드 서버당 동시에 맺을 수 있는 최대 TCP 연결 수.
-   * (2) Max Idle Time (? ms): 사용이 끝난 소켓이 풀에서 재사용을 기다리며 생존할 수 있는 시간.
-   * (3) Acquire Timeout (? ms): 풀이 가득 찼을 때, 다른 요청이 끝나서 소켓을 넘겨받기 위해 기다리는 시간.
-
-```
-
-| 구분                            | HTTP/1.1                   | HTTP/2                                |
-| ----------------------------- | -------------------------- | ------------------------------------- |
-| 기본 구조                         | 보통 connection 하나에서 순차 처리   | connection 하나에 여러 stream multiplexing |
-| 요청 timeout 영향 범위              | 요청과 connection이 강하게 묶임     | 요청(stream)과 connection 분리             |
-| keep-alive 의미                 | 다음 요청 재사용 위해 connection 유지 | 여러 stream을 싣는 connection 자체 유지        |
-| stream 개념                     | 없음                         | 있음                                    |
-| 요청별 timeout 발생 시              | 경우에 따라 connection 영향 큼     | 보통 해당 stream만 종료                      |
-| connection-level timeout 발생 시 | connection 종료              | connection 종료 + 모든 active stream 영향   |
-
-```
-그래서 운영 원칙은 보통 이렇습니다
-1. TCP/connection-level timeout
-보수적
-너무 짧게 두지 않음
-connection 전체를 쉽게 죽이지 않음
-2. HTTP/application-level timeout
-서비스 SLA 기준으로 더 타이트하게
-request/response/stream 단위로 제어
-
-즉:
-
-거친 칼은 TCP에 두지 말고
-정교한 칼은 HTTP 레벨에 둔다
-
-이 느낌입니다.
-```
+- HTTP
+  - response timeout (client)
+    - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
+    - 일정 시간 내에 응답이 시작되지 않거나, client/library 정의에 따라 응답 처리가 완료되지 않으면 response timeout 발생
+  - keep-alive timeout (client/server)
+    - http1.1
+      - http idle time이 timer를 넘어가면 underlying tcp connection 종료
+    - http2
+      - stream이 없는 시간이 timer를 넘어가면 underlying tcp connection 종료
