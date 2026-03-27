@@ -73,3 +73,21 @@
 | stream 개념                     | 없음                         | 있음                                    |
 | 요청별 timeout 발생 시              | 경우에 따라 connection 영향 큼     | 보통 해당 stream만 종료                      |
 | connection-level timeout 발생 시 | connection 종료              | connection 종료 + 모든 active stream 영향   |
+
+```
+그래서 운영 원칙은 보통 이렇습니다
+1. TCP/connection-level timeout
+보수적
+너무 짧게 두지 않음
+connection 전체를 쉽게 죽이지 않음
+2. HTTP/application-level timeout
+서비스 SLA 기준으로 더 타이트하게
+request/response/stream 단위로 제어
+
+즉:
+
+거친 칼은 TCP에 두지 말고
+정교한 칼은 HTTP 레벨에 둔다
+
+이 느낌입니다.
+```
