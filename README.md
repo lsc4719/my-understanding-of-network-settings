@@ -1,4 +1,6 @@
-- Socket
+- OS level
+
+- Network Library Socket Level
   - connection timeout (client)
     - TCP 3-way handshake에서 client가 SYN을 보낸 뒤 연결 완료를 기다림
     - 일정 시간 내에 SYN-ACK를 받지 못하면 connection timeout 발생
@@ -14,7 +16,7 @@
     - 일정 시간마다 probe
     - probe 실패한 시간이 timer를 넘어가면 keep-alive timeout 발생
 
-- HTTP
+- Network Library HTTP Level
   - response timeout (client)
     - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
     - 일정 시간 내에 응답이 시작되지 않거나, client/library 정의에 따라 응답 처리가 완료되지 않으면 response timeout 발생
