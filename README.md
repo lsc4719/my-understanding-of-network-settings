@@ -18,10 +18,8 @@
 - Network Library HTTP Level
   - response timeout (client)
     - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
-    - 구현체에 따라 의미가 조금 다를 수 있음
-      - 응답이 시작될 때까지의 시간일 수도 있고
-      - 전체 응답 수신 완료까지 포함한 시간일 수도 있음
-    - 설정한 시간 내 조건을 만족하지 못하면 response timeout 발생
+    - 구현체에 따라 응답 시작까지의 시간일 수도 있고, 전체 응답 처리 완료까지 포함할 수도 있음
+    - 일정 시간 내 조건을 만족하지 못하면 response timeout 발생
   - HTTP keep-alive timeout (client/server)
     - HTTP/1.1
       - 다음 요청이 없는 유휴 시간 시간이 timeout을 넘으면 underlying TCP connection 종료
