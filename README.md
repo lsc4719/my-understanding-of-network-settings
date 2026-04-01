@@ -24,7 +24,7 @@
     - 설정한 시간 내 조건을 만족하지 못하면 response timeout 발생
   - HTTP keep-alive timeout (client/server)
     - HTTP/1.1
-      - persistent connection에서 idle 시간이 timeout을 넘으면 underlying TCP connection 종료
+      - 다음 요청이 없는 유휴 시간 시간이 timeout을 넘으면 underlying TCP connection 종료
     - HTTP/2
       - connection이 idle 상태로 일정 시간 유지되면 underlying connection을 종료할 수 있음
       - 구현체에 따라 기준이 다를 수 있음
