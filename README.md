@@ -27,6 +27,7 @@
     - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
     - 구현체에 따라 응답 시작까지의 시간일 수도 있고, 전체 응답 처리 완료까지 포함할 수도 있음
     - 구현체에 따라 부분 응답 사이의 최대 idle/read 간격으로 동작할 수도 있음
+    - Reactor Netty에서는 응답 수신 중 각 network-level read operation 사이의 최대 허용 간격을 의미함
   - HTTP idle timeout (client/server)
     - HTTP connection에서 일정 시간 동안 HTTP-level activity가 없으면 connection 종료
   - HTTP keep-alive timeout (client/server)
