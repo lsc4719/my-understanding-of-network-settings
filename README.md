@@ -4,7 +4,7 @@
     - in-flight inactivity timeout: 요청/응답 처리 중 read/write 등의 진전이 일정 시간 없을 때 발생하는 timeout
     - deadline timeout: 요청/응답/연결 단계 전체에 대한 최대 허용 시간HTTP
   - 서로 다른 level 간의 timeout 대소관계
-    - keep-alive timeout <= socket idle timeout <= TCP keepalive detection time
+    - HTTP keep-alive timeout <= socket idle timeout <= TCP keepalive detection time
     - HTTP request/response deadline <= socket read/write timeout <= OS/TCP backstop
     - HTTP-specific inactivity timeout <= generic socket inactivity timeout
   - client - proxy - server ordering
