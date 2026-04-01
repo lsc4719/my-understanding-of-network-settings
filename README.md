@@ -1,12 +1,20 @@
 - Timeout layering
-  - idle cleanup timeout: 유휴 상태의 connection을 정리하기 위한 timeout
-  - in-flight inactivity timeout: 요청/응답 처리 중 read/write 등의 진전이 일정 시간 없을 때 발생하는 timeout
-  - deadline timeout: 요청/응답/연결 단계 전체에 대한 최대 허용 시간
-  - 일반적으로는
-    - idle cleanup timeout은 더 짧게
-    - in-flight inactivity timeout은 더 길게
-    - deadline timeout은 가장 바깥 상한으로 설정
-  - 따라서 timeout은 단순히 “하위가 항상 더 짧다”가 아니라, 무엇을 감시하는 timeout인지에 따라 계층적으로 설계해야 함
+  - timeout 종류
+    - idle cleanup timeout: 유휴 상태의 connection을 정리하기 위한 timeout
+    - in-flight inactivity timeout: 요청/응답 처리 중 read/write 등의 진전이 일정 시간 없을 때 발생하는 timeout
+    - deadline timeout: 요청/응답/연결 단계 전체에 대한 최대 허용 시간HTTP
+  - 서로 다른 level 간의 timeout 대소관계
+    - keep-alive timeout <= socket idle timeout <= TCP keepalive detection time
+    - HTTP request/response deadline <= socket read/write timeout <= OS/TCP backstop
+    - HTTP-specific inactivity timeout <= generic socket inactivity timeout
+  - client - proxy - server ordering
+    - 같은 timeout이라도 hop마다 의미가 다를 수 있으므로, 모든 timeout에 대해 고정된 대소관계를 두지는 않는다.
+    - idle / keep-alive 계열은 보통 바깥 hop이 안쪽 hop보다 더 오래 connection 재사용을 기대하지 않도록 설정한다.
+      - client connection pool idle timeout <= proxy downstream keep-alive timeout
+      - proxy upstream idle/keep-alive timeout <= server keep-alive timeout
+    - overall deadline 계열은 보통 바깥의 전체 timeout이 가장 크고, 안쪽 hop의 세부 timeout은 그보다 짧게 둔다.
+      - proxy per-try timeout <= proxy overall timeout <= client overall timeout
+    - 반면 read/write timeout은 hop-local inactivity timeout 성격이 강하므로, 같은 이름으로 client < proxy < server 같은 고정 규칙을 두기보다는 각 hop의 역할에 따라 따로 조정한다.
 
 - OS level
 
