@@ -2,8 +2,7 @@
 
 - Network Library Socket Level
   - connection timeout (client)
-    - TCP 3-way handshake에서 client가 SYN을 보낸 뒤 연결 완료를 기다림
-    - 일정 시간 내에 SYN-ACK를 받지 못하면 connection timeout 발생
+    - client가 connect() 완료를 기다리는 최대 시간
   - read/write timeout (client/server)
     - 연결 수립 후 socket read/write가 일정 시간 동안 진행되지 않으면 timeout 발생
   - idle timeout (client/server)
