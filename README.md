@@ -21,8 +21,10 @@
     - 구현체에 따라 응답 시작까지의 시간일 수도 있고, 전체 응답 처리 완료까지 포함할 수도 있음
     - 일정 시간 내 조건을 만족하지 못하면 response timeout 발생
   - HTTP keep-alive timeout (client/server)
-    - HTTP/1.1
-      - 다음 요청이 없는 유휴 시간 시간이 timeout을 넘으면 underlying TCP connection 종료
-    - HTTP/2
-      - connection이 idle 상태로 유지되면 종료할 수 있다
-      - idle 판단은 구현체에 따라 active stream / frame activity / ping 기준이 다를 수 있다
+    - 재사용 가능한 HTTP connection을 idle 상태로 유지할 수 있는 최대 시간
+    - 일정 시간 동안 다음 요청이 없으면 underlying connection 종료
+      - HTTP/1.1
+        - persistent connection의 idle 시간이 timer를 넘어가면 underlying TCP connection 종료
+      - HTTP/2
+        - connection이 idle 상태로 timer를 넘어가면 underlying connection 종료할 수 있음
+        - idle 판단 기준은 구현체에 따라 active stream, frame activity, ping 정책 등이 다를 수 있음
