@@ -26,8 +26,5 @@
     - HTTP/1.1
       - 다음 요청이 없는 유휴 시간 시간이 timeout을 넘으면 underlying TCP connection 종료
     - HTTP/2
-      - connection이 idle 상태로 일정 시간 유지되면 underlying connection을 종료할 수 있음
-      - 구현체에 따라 기준이 다를 수 있음
-        - 활성 stream 유무
-        - 최근 frame 송수신 유무
-        - ping/heartbeat 정책
+      - connection이 idle 상태로 유지되면 종료할 수 있다
+      - idle 판단은 구현체에 따라 active stream / frame activity / ping 기준이 다를 수 있다
