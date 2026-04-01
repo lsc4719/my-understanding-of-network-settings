@@ -4,7 +4,7 @@
     - 일정 시간 내에 SYN-ACK를 받지 못하면 connection timeout 발생
   - read/write timeout (client/server)
     - 연결 수립 후 socket read/write가 일정 시간 동안 진행되지 않으면 timeout 발생
-  - idle timeout (client/server/proxy)
+  - idle timeout (client/server)
     - 연결이 열린 상태에서 일정 시간 동안 송수신이 없으면 연결을 종료하는 timeout
   - graceful shutdown (server)
     - 새로운 connection accept를 중단
