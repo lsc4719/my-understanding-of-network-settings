@@ -69,3 +69,61 @@
     - 새로운 HTTP 요청 수락을 중단
     - 기존 요청 또는 stream이 종료될 시간을 준 뒤 application 종료
     - 필요 시 timeout 이후 강제 종료 가능
+
+### Spring Cloud Gateway / Reactor Netty
+
+| 설정(property / hook / code)                                            | 레벨                                  | 매치되는 개념                                                    | 설명                                                                                                                                              |
+| --------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spring.cloud.gateway.server.webflux.httpclient.connect-timeout`      | outbound HTTP client                | connection timeout (client)                                | SCG가 downstream 서버에 `connect()` 완료를 기다리는 최대 시간. 전역 설정 가능. ([Home][1])                                                                           |
+| `route.metadata.connect-timeout`                                      | outbound HTTP client (route별)       | connection timeout (client)                                | 특정 route에만 적용하는 connect timeout. route metadata로 override 가능. ([Home][1])                                                                       |
+| `spring.cloud.gateway.server.webflux.httpclient.response-timeout`     | outbound HTTP client                | response timeout / in-flight inactivity timeout            | downstream 응답을 기다리거나 응답 수신 중 일정 시간 진전이 없을 때 적용하는 timeout으로 쓰는 항목. 구현체 관점에서는 “전체 요청 deadline”보다는 response 대기/수신 timeout으로 보는 게 맞습니다. ([Home][1]) |
+| `route.metadata.response-timeout`                                     | outbound HTTP client (route별)       | response timeout / in-flight inactivity timeout            | 특정 route에만 적용하는 response timeout. ([Home][1])                                                                                                   |
+| `spring.cloud.gateway.server.webflux.httpclient.pool.acquire-timeout` | outbound connection pool            | pool acquire timeout                                       | connection pool에서 재사용 가능한 connection을 빌릴 때 기다리는 최대 시간. 질문에서 정리한 timeout taxonomy 중에는 직접 1:1 이름은 없지만, 운영상 pool 관련 대기 timeout으로 봅니다. ([Home][1])  |
+| `spring.cloud.gateway.server.webflux.httpclient.pool.max-idle-time`   | outbound connection pool            | connection pool idle timeout / idle cleanup timeout        | pool 안의 idle connection을 얼마나 오래 유지할지 정하는 값. idle connection cleanup에 해당합니다. ([Home][1])                                                         |
+| `spring.cloud.gateway.server.webflux.httpclient.pool.max-life-time`   | outbound connection pool            | connection max lifetime / max age                          | connection이 idle 여부와 무관하게 얼마나 오래 재사용될 수 있는지 정하는 상한. ([Home][1])                                                                                 |
+| `spring.cloud.gateway.server.webflux.httpclient.pool.max-connections` | outbound connection pool            | pool capacity 관련 설정                                        | timeout 자체는 아니지만, pool 고갈 시 `acquire-timeout` 동작과 함께 봐야 하는 설정입니다. ([Home][1])                                                                   |
+| `spring.cloud.gateway.server.webflux.httpclient.pool.type`            | outbound connection pool            | pool 동작 방식                                                 | `fixed` 등 pool 전략 설정. timeout 자체는 아니지만 idle/max-life 설정과 함께 동작합니다. ([Home][1])                                                                  |
+| `server.netty.connection-timeout`                                     | inbound server                      | connection timeout (server-side accept/channel setup)      | Netty 서버 측 connection timeout. inbound 연결 수립 단계의 timeout 성격입니다. ([Home][2])                                                                     |
+| `server.netty.idle-timeout`                                           | inbound server                      | idle timeout / HTTP idle timeout / keep-alive idle timeout | 서버 쪽 channel이 일정 시간 idle이면 정리하는 설정. HTTP/1.1 keep-alive idle timeout에 가깝게 운영하는 경우가 많습니다. ([Home][2])                                            |
+| `server.netty.max-keep-alive-requests`                                | inbound server                      | max keep-alive requests                                    | 하나의 keep-alive connection에서 처리할 수 있는 최대 요청 수. timeout은 아니지만 keep-alive 재사용 정책에 직접 대응합니다. ([Home][2])                                            |
+| `server.max-http-request-header-size`                                 | inbound HTTP server                 | request header size limit                                  | request header timeout은 아니고, header **크기 제한**에 대응하는 설정입니다. 시간 제한과는 별개입니다. ([Home][2])                                                           |
+| `server.shutdown=graceful`                                            | application/server shutdown         | graceful shutdown                                          | 새 요청 수락을 중단하고 기존 요청이 끝날 시간을 주는 graceful shutdown 동작에 대응합니다. ([Home][3])                                                                         |
+| `spring.lifecycle.timeout-per-shutdown-phase`                         | application/server shutdown         | graceful shutdown timeout                                  | graceful shutdown 시 각 phase에서 기다릴 최대 시간. 질문의 graceful shutdown timeout에 직접 매치됩니다. ([Home][3])                                                   |
+| `HttpClientCustomizer`                                                | outbound HTTP client                | property로 안 되는 세부 timeout 커스터마이징 지점                        | SCG property만으로 부족한 read/write inactivity timeout, TCP keepalive 옵션 등을 넣을 때 사용하는 확장 포인트입니다. ([Home][1])                                         |
+| `ChannelOption.CONNECT_TIMEOUT_MILLIS`                                | outbound HTTP client / Netty socket | connection timeout (client)                                | `httpclient.connect-timeout`과 같은 개념을 Netty 레벨에서 직접 제어할 때 쓰는 옵션입니다. ([Home][4])                                                                  |
+| `ReadTimeoutHandler`                                                  | Netty channel handler               | read timeout / in-flight inactivity timeout                | 연결 수립 후 read가 일정 시간 진행되지 않으면 timeout 처리하는 방식. SCG 공용 property보다는 Netty handler 커스터마이징 영역입니다. ([Home][4])                                        |
+| `WriteTimeoutHandler`                                                 | Netty channel handler               | write timeout / in-flight inactivity timeout               | 연결 수립 후 write가 일정 시간 진행되지 않으면 timeout 처리하는 방식. 역시 Netty handler로 다루는 항목입니다. ([Home][4])                                                         |
+| `SO_KEEPALIVE` / `TCP_KEEPIDLE` / `TCP_KEEPINTVL` / `TCP_KEEPCNT`     | TCP socket option                   | TCP keep-alive timeout / detection time                    | 질문의 “tcp keep-alive timeout” 계열에 대응하는 건 보통 이쪽입니다. SCG 일반 property라기보다 Reactor Netty/Netty socket 옵션 커스터마이징으로 넣습니다. ([Home][5])                  |
+| `onReadIdle(...)` / `onWriteIdle(...)` 류 connection hook              | Netty/Reactor connection hook       | generic socket inactivity timeout                          | read/write 각각의 idle 감지를 hook으로 다루는 방식입니다. property가 아니라 코드 레벨 설정 포인트입니다. ([Home][5])                                                            |
+
+[1]: https://docs.spring.io/spring-cloud-gateway/reference/configprops.html?utm_source=chatgpt.com "Configuration Properties :: Spring Cloud Gateway"
+[2]: https://docs.spring.io/spring-boot/appendix/application-properties/index.html?utm_source=chatgpt.com "Common Application Properties :: Spring Boot"
+[3]: https://docs.spring.io/spring-boot/reference/web/graceful-shutdown.html?utm_source=chatgpt.com "Graceful Shutdown :: Spring Boot"
+[4]: https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux.html?utm_source=chatgpt.com "Spring Cloud Gateway Server WebFlux :: Spring Cloud Gateway"
+[5]: https://docs.spring.io/projectreactor/reactor-netty/docs/current/reference/html/?utm_source=chatgpt.com "Reactor Netty Reference Guide"
+
+
+### SCG에서 매핑이 애매하거나 별도 구현이 필요한 항목
+
+| 개념                                       | SCG/Reactor Netty에서 보통 어떻게 잡는지                                                  | 설명                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| request timeout (HTTP 요청 1건 전체 deadline) | `response-timeout` + filter/circuit breaker/time limiter + app-level timeout 조합 | SCG 기본 property 하나가 “요청 1건 전체 deadline”을 완전히 대표하지는 않습니다. 보통 여러 계층 조합으로 구현합니다. ([Home][1])             |
+| request header timeout                   | 별도 Netty/HTTP server 커스터마이징 필요                                                  | 공용 property로는 보통 header **크기 제한**은 있어도 “header를 몇 초 안에 받아야 한다”는 식의 대표 property는 보이지 않습니다. ([Home][2]) |
+| request body timeout / upload timeout    | Netty handler 또는 application-level timeout                                      | body 업로드/다운로드 중 inactivity를 별도 제어하려면 코드 커스터마이징이 필요한 경우가 많습니다. ([Home][3])                             |
+| response header timeout                  | 별도 구현 또는 `response-timeout`으로 운영                                                | “response header만의 timeout”으로 딱 떨어지는 대표 property보다는 `response-timeout`으로 운영하는 경우가 많습니다. ([Home][1])   |
+| stream idle timeout (HTTP/2)             | HTTP/2 세부 커스터마이징                                                                | SCG 공용 property로 널리 노출된 대표 항목은 제한적입니다. ([Home][3])                                                    |
+| ping / heartbeat timeout                 | HTTP/2 / TCP 레벨 커스터마이징                                                          | gRPC/HTTP2 heartbeat류는 일반 SCG property보다 하위 레벨 설정 성격이 강합니다. ([Home][4])                               |
+
+[1]: https://docs.spring.io/spring-cloud-gateway/reference/configprops.html?utm_source=chatgpt.com "Configuration Properties :: Spring Cloud Gateway"
+[2]: https://docs.spring.io/spring-boot/appendix/application-properties/index.html?utm_source=chatgpt.com "Common Application Properties :: Spring Boot"
+[3]: https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux.html?utm_source=chatgpt.com "Spring Cloud Gateway Server WebFlux :: Spring Cloud Gateway"
+[4]: https://docs.spring.io/projectreactor/reactor-netty/docs/current/reference/html/?utm_source=chatgpt.com "Reactor Netty Reference Guide"
+
+### ALB
+
+| 설정(property)                   | 레벨                              | 매치되는 개념                                                    | 설명                                                                                                                                                           |
+| ------------------------------ | ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `idle_timeout.timeout_seconds` | ALB connection                  | idle timeout / HTTP idle timeout / keep-alive idle timeout | 기존 client connection 또는 target connection에 데이터 송수신이 없는 상태를 얼마나 허용할지 정하는 timeout입니다. ALB에서 timeout 개념으로 가장 대표적인 항목입니다. 기본 60초이며 범위는 1~4000초입니다. ([AWS 문서][1]) |
+| `client_keep_alive.seconds`    | ALB client-side HTTP connection | HTTP keep-alive timeout / client keep-alive duration       | ALB가 클라이언트와의 persistent HTTP connection을 얼마나 오래 유지할지 정하는 설정입니다. ALB 쪽에서 별도로 노출되는 또 하나의 핵심 timeout/유사-timeout 항목입니다. ([AWS 문서][1])                            |
+
+[1]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-load-balancer-attributes.html?utm_source=chatgpt.com "Edit attributes for your Application Load Balancer"
