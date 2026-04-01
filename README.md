@@ -18,9 +18,16 @@
 - Network Library HTTP Level
   - response timeout (client)
     - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
-    - 일정 시간 내에 응답이 시작되지 않거나, client/library 정의에 따라 응답 처리가 완료되지 않으면 response timeout 발생
-  - keep-alive timeout (client/server)
-    - http1.1
-      - http idle time이 timer를 넘어가면 underlying tcp connection 종료
-    - http2
-      - stream이 없는 시간이 timer를 넘어가면 underlying tcp connection 종료
+    - 구현체에 따라 의미가 조금 다를 수 있음
+      - 응답이 시작될 때까지의 시간일 수도 있고
+      - 전체 응답 수신 완료까지 포함한 시간일 수도 있음
+    - 설정한 시간 내 조건을 만족하지 못하면 response timeout 발생
+  - HTTP keep-alive timeout (client/server)
+    - HTTP/1.1
+      - persistent connection에서 idle 시간이 timeout을 넘으면 underlying TCP connection 종료
+    - HTTP/2
+      - connection이 idle 상태로 일정 시간 유지되면 underlying connection을 종료할 수 있음
+      - 구현체에 따라 기준이 다를 수 있음
+        - 활성 stream 유무
+        - 최근 frame 송수신 유무
+        - ping/heartbeat 정책
