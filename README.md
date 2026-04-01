@@ -11,9 +11,9 @@
     - 새로운 connection accept를 중단
     - 기존 connection 또는 진행 중인 요청이 종료될 시간을 준 뒤 application 종료
     - 필요 시 shutdown timeout 이후 남은 connection을 강제 종료할 수 있음
-  - keep-alive timeout (client/server)
-    - 일정 시간마다 probe
-    - probe 실패한 시간이 timer를 넘어가면 keep-alive timeout 발생
+  - tcp keep-alive timeout (client/server)
+    - 연결이 오랫동안 idle 상태일 때 peer가 살아있는지 확인하기 위해 probe를 전송
+    - 일정 횟수 또는 일정 시간 동안 응답이 없으면 dead connection으로 판단하고 연결 종료
 
 - Network Library HTTP Level
   - response timeout (client)
