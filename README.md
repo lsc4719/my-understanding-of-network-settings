@@ -14,17 +14,39 @@
   - tcp keep-alive timeout (client/server)
     - 연결이 오랫동안 idle 상태일 때 peer가 살아있는지 확인하기 위해 probe를 전송
     - 일정 횟수 또는 일정 시간 동안 응답이 없으면 dead connection으로 판단하고 연결 종료
+  - connection pool idle timeout (client)
+    - pool 안의 idle connection을 일정 시간 후 제거 또는 종료
+    - 일반적으로 outbound connection 재사용을 위한 client-side pool에서 사용
+  - connection max lifetime / max age (client/server)
+    - connection이 idle 여부와 무관하게 일정 시간이 지나면 더 이상 재사용되지 않음
 
 - Network Library HTTP Level
+  - request timeout (client)
+    - HTTP 요청 1건 전체에 허용되는 최대 시간
   - response timeout (client)
     - HTTP 요청을 보낸 뒤 응답을 기다리는 최대 시간
     - 구현체에 따라 응답 시작까지의 시간일 수도 있고, 전체 응답 처리 완료까지 포함할 수도 있음
-    - 일정 시간 내 조건을 만족하지 못하면 response timeout 발생
+    - 구현체에 따라 부분 응답 사이의 최대 idle/read 간격으로 동작할 수도 있음
+  - HTTP idle timeout (client/server)
+    - HTTP connection에서 일정 시간 동안 HTTP-level activity가 없으면 connection 종료
   - HTTP keep-alive timeout (client/server)
     - 재사용 가능한 HTTP connection을 idle 상태로 유지할 수 있는 최대 시간
     - 일정 시간 동안 다음 요청이 없으면 underlying connection 종료
-      - HTTP/1.1
-        - persistent connection의 idle 시간이 timer를 넘어가면 underlying TCP connection 종료
-      - HTTP/2
-        - connection이 idle 상태로 timer를 넘어가면 underlying connection 종료할 수 있음
-        - idle 판단 기준은 구현체에 따라 active stream, frame activity, ping 정책 등이 다를 수 있음
+    - HTTP/1.1에서는 HTTP idle timeout과 거의 같은 의미로 쓰이는 경우가 많음
+    - HTTP/2에서는 구현체에 따라 active stream, frame activity, ping 정책 등을 기준으로 판단할 수 있음
+  - request header timeout (server)
+    - request header를 수신하는 데 허용되는 최대 시간
+  - request body timeout / upload timeout (client/server)
+    - request body 송수신이 일정 시간 동안 완료되지 않거나 진전되지 않으면 timeout 발생
+  - response header timeout (client)
+    - response header를 수신하는 데 허용되는 최대 시간
+  - stream idle timeout (client/server, HTTP/2)
+    - 개별 stream이 일정 시간 activity 없이 유지되면 종료
+    - ping / heartbeat timeout (client/server)
+    - HTTP/2, gRPC 등에서 ping 또는 heartbeat 응답이 일정 시간 없으면 연결 이상으로 판단
+  - max keep-alive requests (client/server)
+    - 하나의 persistent connection에서 처리할 수 있는 최대 요청 수
+  - graceful shutdown timeout (server)
+    - 새로운 HTTP 요청 수락을 중단
+    - 기존 요청 또는 stream이 종료될 시간을 준 뒤 application 종료
+    - 필요 시 timeout 이후 강제 종료 가능
